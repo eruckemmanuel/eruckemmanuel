@@ -1,2 +1,2 @@
 # eruckemmanuel
-Personal Website and Block API
+Personal Website and Blog API
