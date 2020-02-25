@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 
 from home.models import ContactMessage
+from home.serializers import ContactMessageSerializer
 from home.utils import status_codes
 
 
@@ -31,6 +32,21 @@ class SaveMessage(APIView):
         message.save()
         self.context['status'] = 200
         self.context['status_text'] = status_codes[200]
+
+        return Response(self.context)
+
+
+
+class GetMessages(APIView):
+
+    context = {}
+
+    def get(self, request, *args, **kwargs):
+        messages = ContactMessage.objects.all().order_by('-date')
+        serializer = ContactMessageSerializer(messages, many=True)
+        self.context['status'] = 200
+        self.context['status_text'] = status_codes[200]
+        self.context['data'] = serializer.data
 
         return Response(self.context)
 

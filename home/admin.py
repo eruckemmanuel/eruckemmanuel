@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from home.models import ContactMessage, Project
+
+admin.site.register(ContactMessage)
+admin.site.register(Project)
