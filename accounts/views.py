@@ -1,6 +1,3 @@
-from random import randint
-
-from django.utils import timezone
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -16,9 +13,7 @@ from accounts.models import Profile, PhoneVerificationCodes
 from accounts.serializers import UserSerializer
 
 
-
 from home.utils import status_codes
-from accounts.tasks import send_sms
 
 
 
@@ -84,9 +79,8 @@ class CreateAccount(APIView):
         match = PhoneVerificationCodes.objects.filter(Q(phone=phone) & Q(code=code)
                                                       & Q(verified=False) & Q(expired=False))
         if not match:
-            self.context['status'] = 406
             self.context['data'] = 'INVALID VERIFICATION'
-            return Response(self.context)
+            return Response(self.context, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
         if get_user(username):
@@ -110,58 +104,6 @@ class CreateAccount(APIView):
             }
 
         })
-
-
-
-class VerifyPhoneNumber(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request, *args, **kwargs):
-        context = {}
-        phone = request.GET.get('phone')
-        code = ''.join(["{}".format(randint(0, 9)) for num in range(0, 6)])
-
-        message = _('Your Account Verifcation Code is V-')+code +'.\n'+_('Enter this code in the text field.')
-
-        PhoneVerificationCodes.objects.filter(phone=phone).update(expired=True)
-
-        sent = send_sms('VehMail', phone, message)
-        if sent:
-            PhoneVerificationCodes(phone=phone, code=code,
-                                   date_sent=timezone.now()).save()
-
-            context['status'] = 200
-            context['status_text'] = status_codes[200]
-        else:
-            context['status'] = 500
-            context['status_text'] = status_codes[500]
-
-        return Response(context)
-
-
-
-
-class ValidateVerificationCode(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request, *args, **kwargs):
-        context = {}
-        phone = request.GET.get('phone')
-        code = request.GET.get('code')
-
-        match = PhoneVerificationCodes.objects.filter(Q(phone=phone) & Q(code=code)
-                                                      & Q(verified=False) & Q(expired=False))
-        if match:
-            context['status'] = 202
-            context['status_text'] = status_codes[202]
-            match.update(verified=True)
-        else:
-            context['status'] = 406
-            context['status_text'] = status_codes[406]
-
-        return Response(context)
-
-
 
 
 def get_user(username):
