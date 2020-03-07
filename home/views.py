@@ -1,15 +1,26 @@
-from django.shortcuts import render
-from rest_framework import permissions
+"""
+Imports for PyPi modules
+"""
+from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-
+"""
+Imports for project Models
+"""
 from home.models import ContactMessage
+
+
+"""
+Imports for Project Serializers
+"""
 from home.serializers import ContactMessageSerializer
-from home.utils import status_codes
 
 
-class SaveMessage(APIView):
+
+
+"""View for processing Contact Messages of Site"""
+class ContactMessage(APIView):
 
     permission_classes = [permissions.AllowAny]
 
@@ -21,32 +32,27 @@ class SaveMessage(APIView):
             name = request.data['name']
             email = request.data['email']
             message = request.data['message']
-        except Exception as e:
-            print(e)
-            self.context['status'] = 430
-            self.context['status_text'] = status_codes[430]
-
-            return Response(self.context)
+        except KeyError as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         message = ContactMessage(name=name, email=email, message=message)
         message.save()
-        self.context['status'] = 200
-        self.context['status_text'] = status_codes[200]
 
-        return Response(self.context)
+        self.context['message'] = ContactMessageSerializer(message).data
 
+        return Response(self.context, status=status.HTTP_200_OK)
 
-
-class GetMessages(APIView):
-
-    context = {}
 
     def get(self, request, *args, **kwargs):
+
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
         messages = ContactMessage.objects.all().order_by('-date')
         serializer = ContactMessageSerializer(messages, many=True)
-        self.context['status'] = 200
-        self.context['status_text'] = status_codes[200]
-        self.context['data'] = serializer.data
 
-        return Response(self.context)
+        self.context['messages'] = serializer.data
+
+        return Response(self.context, status=status.HTTP_200_OK)
+
 
