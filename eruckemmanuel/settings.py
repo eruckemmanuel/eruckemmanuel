@@ -42,6 +42,7 @@ MIDDLEWARE = [
 
 INSTALLED_APPS = [
     'channels',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
